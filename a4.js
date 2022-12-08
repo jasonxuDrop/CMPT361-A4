@@ -243,91 +243,96 @@ TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
 }
 
 Scene.prototype.computeTransformation = function(transformSequence) {
-	// TODO: go through transform sequence and compose into overallTransform
-	transformSequence.forEach((x , i) => {
-		console.log(i + ":	" + x);
-	});
-
 	// input are 2d arrays each transformation is one row
 	// each row starts with the type of transformation
 	// each row is followed by the parameters
 
+	// transformSequence.forEach((x , i) => {
+	// 	console.log(i + ":	" + x);
+	// });
+
 	var transform = Mat4.create(); // identity
 
-	transformSequence.forEach((x) => {
-		if 		(x[0] == "S") {
-			var m = Mat4.create();
-			Mat4.set( m,
-				x[1],	0,	0,	0,
-				0,	x[2],	0,	0,
-				0,	0,	x[3],	0,
-				0,	0,	0,	1
-			);
-			transform = Mat4.multiply(transform, transform, m);
-		}
-		else if (x[0] == "T") {
-			var m = Mat4.create();
-			Mat4.set( m,
-				1,	0,	0,	0,
-				0,	1,	0,	0,
-				0,	0,	1,	0,
-				x[1],	x[2],	x[3],	1
-			);
-			transform = Mat4.multiply(transform, transform, m);
-		}
-		else if (x[0] == "Rx") {
-			var m = Mat4.create();
-			let theta = (x[1] * Math.PI) / 180.0;
-			Mat4.set( m,
-				1,	0,	0,	0,
-				0,	 Math.cos(theta),	Math.sin(theta),	0,
-				0,	-Math.sin(theta),	Math.cos(theta),	0,
-				0,	0,	0,	1
-			);
-			transform = Mat4.multiply(transform, transform, m);
-		}
-		else if (x[0] == "Ry") {
-			var m = Mat4.create();
-			let theta = (x[1] * Math.PI) / 180.0;
-			Mat4.set( m,
-				Math.cos(theta),	0,	-Math.sin(theta),	0,
-				0,	1,	0,	0,
-				Math.sin(theta),	0,	Math.cos(theta),	0,
-				0,	0,	0,	1
-			);
-			transform = Mat4.multiply(transform, transform, m);
-		}
-		else if (x[0] == "Rz") {
-			var m = Mat4.create();
-			let theta = (x[1] * Math.PI) / 180.0;
-			Mat4.set( m,
-				Math.cos(theta),	Math.sin(theta),	0,	0,
-				-Math.sin(theta),	Math.cos(theta),	0,	0,
-				0,	0,	1,	0,
-				0,	0,	0,	1
-			);
-			transform = Mat4.multiply(transform, transform, m);
-		}
+	applyTransformRec(transformSequence, 0, transform);
 
-		console.log("Transform matrix: " + transform.map(x => x.toFixed(2)));
-
-	});
-
+	// 	console.log("Transform matrix: " + transform.map(x => x.toFixed(2)));
+	
 	return transform;
 }
-/*
-mt:
-1,0,0,-1,
-0,1,0,0,
-0,0,1,2,
-0,0,0,1
 
-final (only mt):
-1,0,0,-1,
-0,1,0,0,
-0,0,1,2,
-0,0,0,1
+// tail recursion to correct order
+function applyTransformRec(inputs, row, mt) {
+	
+
+	let current = inputs[row];
+
+	var m = Mat4.create();
+
+
+	if 		(current[0] == "S") {
+		Mat4.set( m,
+			current[1],	0,	0,	0,
+			0,	current[2],	0,	0,
+			0,	0,	current[3],	0,
+			0,	0,	0,	1
+		);
+	}
+	else if (current[0] == "T") {
+		Mat4.set( m,
+			1,	0,	0,	0,
+			0,	1,	0,	0,
+			0,	0,	1,	0,
+			current[1],	current[2],	current[3],	1
+		);
+	}
+	else if (current[0] == "Rx") {
+		let theta = (current[1] * Math.PI) / 180.0;
+		Mat4.set( m,
+			1,	0,	0,	0,
+			0,	 Math.cos(theta),	Math.sin(theta),	0,
+			0,	-Math.sin(theta),	Math.cos(theta),	0,
+			0,	0,	0,	1
+		);
+	}
+	else if (current[0] == "Ry") {
+		let theta = (current[1] * Math.PI) / 180.0;
+		Mat4.set( m,
+			Math.cos(theta),	0,	-Math.sin(theta),	0,
+			0,	1,	0,	0,
+			Math.sin(theta),	0,	Math.cos(theta),	0,
+			0,	0,	0,	1
+		);
+	}
+	else if (current[0] == "Rz") {
+		let theta = (current[1] * Math.PI) / 180.0;
+		Mat4.set( m,
+			Math.cos(theta),	Math.sin(theta),	0,	0,
+			-Math.sin(theta),	Math.cos(theta),	0,	0,
+			0,	0,	1,	0,
+			0,	0,	0,	1
+		);
+	}
+
+	if (row+1 < inputs.length) {
+		mt = Mat4.multiply(mt, applyTransformRec(inputs, row+1, mt), m);
+		return mt;
+	}
+	else {
+		return m;
+	}
+}
+
+
+/*
+0:	Rx,70,0,0
+1:	Rz,75,0,0
+2:	S,0.5,0.5,0.5
+3:	T,-1,0,2
+
+T * S * Rz * Rx 
+
 */
+
 
 
 Renderer.prototype.VERTEX_SHADER = `
