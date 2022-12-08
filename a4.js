@@ -225,7 +225,7 @@ TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
 	this.positions = verts; 
 	this.normals = norms;
 	this.uvCoords = uvs;
-	this.indices = _indices.slice(0,-6);
+	this.indices = _indices;
 
 	var vertGroups = new Array();
 	
@@ -344,20 +344,28 @@ uniform mat4 projectionMatrix, viewMatrix, modelMatrix;
 uniform mat3 normalMatrix;
 varying vec2 vTexCoord;
 
-// TODO: implement vertex shader logic below
-
-varying vec3 temp;
+// new vars
+varying vec3 fNormal;
+varying vec3 fPosition;
+varying vec3 lightDir;
+varying vec3 cameraDir;
 
 void main() {
-	temp = vec3(position.x, normal.x, uvCoord.x);
+	fNormal = normalize(normalMatrix * normal);
 	vTexCoord = uvCoord;
-	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+	vec4 pos = viewMatrix * modelMatrix * vec4(position, 1.0);
+	gl_Position = projectionMatrix * pos;
+	
+	lightDir = normalize(lightPosition - position);
+	vec3 cameraDir = -pos.z * normalize(position);
 }
 `;
 
 Renderer.prototype.FRAGMENT_SHADER = `
 precision mediump float;
-uniform vec3 ka, kd, ks, lightIntensity;
+// created with material: 
+// ambient ( ka ), diffuse ( kd ), specular ( ks ), and specular exponent ( shininess ) coefficients
+uniform vec3 ka, kd, ks, lightIntensity; 
 uniform float shininess;
 uniform sampler2D uTexture;
 uniform bool hasTexture;
@@ -365,10 +373,31 @@ varying vec2 vTexCoord;
 
 // TODO: implement fragment shader logic below
 
-varying vec3 temp;
+// added vars
+varying vec3 fNormal;
+varying vec3 lightDir;
+varying vec3 cameraDir;
 
 void main() {
-	gl_FragColor = vec4(temp, 1.0);
+	
+	// ! blinn-phong: ambient + diffuse + and specular
+
+	float n_dot_l = dot(fNormal, lightDir);
+	vec3 halfVector = normalize(lightDir + cameraDir);
+	float n_dot_hv = dot(fNormal, halfVector);
+  
+	vec3 diffuse = kd * max(0.0, n_dot_l);
+	vec3 specular = ks * pow(max(0.0, n_dot_hv), shininess);
+	vec3 finalColor = ka + diffuse + specular;
+	
+
+	// ! texture sampling
+
+	if (hasTexture) {
+
+	}
+  
+	gl_FragColor = vec4(finalColor, 1.0);
 }
 `;
 
@@ -379,7 +408,7 @@ const DEF_INPUT = [
 	"c,myCamera,perspective,5,5,5,0,0,0,0,1,0;",
 	"l,myLight,point,0,5,0,2,2,2;",
 	"p,unitCube,cube;",
-	// "p,unitSphere,sphere,8,16;",
+	"p,unitSphere,sphere,8,16;",
 	"m,redDiceMat,0.3,0,0,0.7,0,0,1,1,1,15,dice.jpg;",
 	"m,grnDiceMat,0,0.3,0,0,0.7,0,1,1,1,15,dice.jpg;",
 	"m,bluDiceMat,0,0,0.3,0,0,0.7,1,1,1,15,dice.jpg;",
@@ -387,7 +416,7 @@ const DEF_INPUT = [
 	"o,rd,unitCube,redDiceMat;",
 	"o,gd,unitCube,grnDiceMat;",
 	"o,bd,unitCube,bluDiceMat;",
-	// "o,gl,unitSphere,globeMat;",
+	"o,gl,unitSphere,globeMat;",
 	"X,rd,Rz,75;X,rd,Rx,90;X,rd,S,0.5,0.5,0.5;X,rd,T,-1,0,2;",
 	"X,gd,Ry,45;X,gd,S,0.5,0.5,0.5;X,gd,T,2,0,2;",
 	"X,bd,S,0.5,0.5,0.5;X,bd,Rx,90;X,bd,T,2,0,-1;",
