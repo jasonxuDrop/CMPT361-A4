@@ -123,19 +123,14 @@ const cube = {
 
 
 TriangleMesh.prototype.createCube = function() {
-	// TODO: populate unit cube vertex positions, normals, and uv coordinates
 	this.positions = cube.positions;
 	this.normals = cube.normals;
 	this.uvCoords = cube.uvCoords; // TODO: check if correct with image
 }
 
 TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
-	// TODO: populate unit sphere vertex positions, normals, uv coordinates, and indices
-	// this.positions = quad.positions.slice(0, 9).map(p => p * 0.5);
-	// this.normals = quad.normals.slice(0, 9);
-	// this.uvCoords = quad.uvCoords.slice(0, 6);
-	// this.indices = [0, 1, 2];
 
+	// referencing http://www.songho.ca/opengl/gl_sphere.html
 	// ! POSITIONS, VERT NORMAL, UV 
 
 	var verts = new Array();
@@ -240,20 +235,101 @@ TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
 		);
 	}
 
-	console.log("VERTS:\n" + vertGroups);
-		// verts.map((element, index) => index + ":	"+ element.toFixed(2)).join("\n"));
-	console.log(
-		"INDICES:\n" + 
-		_indices.map((element, index) => index + ":	"+ element.toFixed(0)).join("\n"));
-
-
+	// console.log("VERTS:\n" + vertGroups);
+	// 	// verts.map((element, index) => index + ":	"+ element.toFixed(2)).join("\n"));
+	// console.log(
+	// 	"INDICES:\n" + 
+	// 	_indices.map((element, index) => index + ":	"+ element.toFixed(0)).join("\n"));
 }
 
 Scene.prototype.computeTransformation = function(transformSequence) {
 	// TODO: go through transform sequence and compose into overallTransform
-	let overallTransform = Mat4.create();  // identity matrix
-	return overallTransform;
+	transformSequence.forEach((x , i) => {
+		console.log(i + ":	" + x);
+	});
+
+	// input are 2d arrays each transformation is one row
+	// each row starts with the type of transformation
+	// each row is followed by the parameters
+
+	var transform = Mat4.create(); // identity
+	var ms = Mat4.create();
+	var mrx = Mat4.create();
+	var mry = Mat4.create();
+	var mrz = Mat4.create();
+	var mt = Mat4.create();
+
+	transformSequence.forEach((x) => {
+		if 		(x[0] == "S") {
+			Mat4.set( ms,
+				x[1],	0,	0,	0,
+				0,	x[2],	0,	0,
+				0,	0,	x[3],	0,
+				0,	0,	0,	1
+			);
+		}
+		else if (x[0] == "T") { // TODO: ?????
+			Mat4.set( mt,
+				1,	0,	0,	x[1],
+				0,	1,	0,	x[2],
+				0,	0,	1,	x[3],
+				0,	0,	0,	1
+			);
+			console.log("Translation parameters" + x + "\nmt matrix: " + mt);
+		}
+		else if (x[0] == "Rx") {
+			let theta = (x[1] * Math.PI) / 180.0;
+			
+			Mat4.set( mrx,
+				1,	0,	0,	0,
+				0,	Math.cos(theta),	-Math.sin(theta),	0,
+				0,	Math.sin(theta),	 Math.cos(theta),	0,
+				0,	0,	0,	1
+			);
+		}
+		else if (x[0] == "Ry") {
+			let theta = (x[1] * Math.PI) / 180.0;
+			
+			Mat4.set( mry,
+				Math.cos(theta),	0,	Math.sin(theta),	0,
+				0,	1,	0,	0,
+				-Math.sin(theta),	0,	Math.cos(theta),	0,
+				0,	0,	0,	1
+			);
+		}
+		else if (x[0] == "Rz") {
+			let theta = (x[1] * Math.PI) / 180.0;
+			
+			Mat4.set( mrz,
+				Math.cos(theta),	-Math.sin(theta),	0,	0,
+				Math.sin(theta),	Math.cos(theta),	0,	0,
+				0,	0,	1,	0,
+				0,	0,	0,	1
+			);
+		}
+
+		transform = Mat4.multiply(transform, ms, mrx);
+		transform = Mat4.multiply(transform, transform, mry);
+		transform = Mat4.multiply(transform, transform, mrz);
+		transform = Mat4.multiply(transform, transform, mt);
+
+		console.log("Transform matrix: " + transform.map(x => x.toFixed(2)));
+
+	});
+
+	return transform;
 }
+/*
+mt:
+1,0,0,0,
+0,1,0,1.5,
+0,0,1,0,
+0,0,0,1
+
+final (only mt):
+
+*/
+
 
 Renderer.prototype.VERTEX_SHADER = `
 precision mediump float;
@@ -298,16 +374,16 @@ void main() {
 const DEF_INPUT = [
 	"c,myCamera,perspective,5,5,5,0,0,0,0,1,0;",
 	"l,myLight,point,0,5,0,2,2,2;",
-	// "p,unitCube,cube;",
-	"p,unitSphere,sphere,3,3;",
+	"p,unitCube,cube;",
+	// "p,unitSphere,sphere,8,16;",
 	"m,redDiceMat,0.3,0,0,0.7,0,0,1,1,1,15,dice.jpg;",
 	"m,grnDiceMat,0,0.3,0,0,0.7,0,1,1,1,15,dice.jpg;",
 	"m,bluDiceMat,0,0,0.3,0,0,0.7,1,1,1,15,dice.jpg;",
 	"m,globeMat,0.3,0.3,0.3,0.7,0.7,0.7,1,1,1,5,globe.jpg;",
-	// "o,rd,unitCube,redDiceMat;",
-	// "o,gd,unitCube,grnDiceMat;",
-	// "o,bd,unitCube,bluDiceMat;",
-	"o,gl,unitSphere,globeMat;",
+	"o,rd,unitCube,redDiceMat;",
+	"o,gd,unitCube,grnDiceMat;",
+	"o,bd,unitCube,bluDiceMat;",
+	// "o,gl,unitSphere,globeMat;",
 	"X,rd,Rz,75;X,rd,Rx,90;X,rd,S,0.5,0.5,0.5;X,rd,T,-1,0,2;",
 	"X,gd,Ry,45;X,gd,S,0.5,0.5,0.5;X,gd,T,2,0,2;",
 	"X,bd,S,0.5,0.5,0.5;X,bd,Rx,90;X,bd,T,2,0,-1;",
