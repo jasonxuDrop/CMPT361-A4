@@ -253,65 +253,61 @@ Scene.prototype.computeTransformation = function(transformSequence) {
 	// each row is followed by the parameters
 
 	var transform = Mat4.create(); // identity
-	var ms = Mat4.create();
-	var mrx = Mat4.create();
-	var mry = Mat4.create();
-	var mrz = Mat4.create();
-	var mt = Mat4.create();
 
 	transformSequence.forEach((x) => {
 		if 		(x[0] == "S") {
-			Mat4.set( ms,
+			var m = Mat4.create();
+			Mat4.set( m,
 				x[1],	0,	0,	0,
 				0,	x[2],	0,	0,
 				0,	0,	x[3],	0,
 				0,	0,	0,	1
 			);
+			transform = Mat4.multiply(transform, transform, m);
 		}
-		else if (x[0] == "T") { // TODO: ?????
-			Mat4.set( mt,
-				1,	0,	0,	x[1],
-				0,	1,	0,	x[2],
-				0,	0,	1,	x[3],
-				0,	0,	0,	1
+		else if (x[0] == "T") {
+			var m = Mat4.create();
+			Mat4.set( m,
+				1,	0,	0,	0,
+				0,	1,	0,	0,
+				0,	0,	1,	0,
+				x[1],	x[2],	x[3],	1
 			);
-			console.log("Translation parameters" + x + "\nmt matrix: " + mt);
+			transform = Mat4.multiply(transform, transform, m);
 		}
 		else if (x[0] == "Rx") {
+			var m = Mat4.create();
 			let theta = (x[1] * Math.PI) / 180.0;
-			
-			Mat4.set( mrx,
+			Mat4.set( m,
 				1,	0,	0,	0,
-				0,	Math.cos(theta),	-Math.sin(theta),	0,
-				0,	Math.sin(theta),	 Math.cos(theta),	0,
+				0,	 Math.cos(theta),	Math.sin(theta),	0,
+				0,	-Math.sin(theta),	Math.cos(theta),	0,
 				0,	0,	0,	1
 			);
+			transform = Mat4.multiply(transform, transform, m);
 		}
 		else if (x[0] == "Ry") {
+			var m = Mat4.create();
 			let theta = (x[1] * Math.PI) / 180.0;
-			
-			Mat4.set( mry,
-				Math.cos(theta),	0,	Math.sin(theta),	0,
+			Mat4.set( m,
+				Math.cos(theta),	0,	-Math.sin(theta),	0,
 				0,	1,	0,	0,
-				-Math.sin(theta),	0,	Math.cos(theta),	0,
+				Math.sin(theta),	0,	Math.cos(theta),	0,
 				0,	0,	0,	1
 			);
+			transform = Mat4.multiply(transform, transform, m);
 		}
 		else if (x[0] == "Rz") {
+			var m = Mat4.create();
 			let theta = (x[1] * Math.PI) / 180.0;
-			
-			Mat4.set( mrz,
-				Math.cos(theta),	-Math.sin(theta),	0,	0,
-				Math.sin(theta),	Math.cos(theta),	0,	0,
+			Mat4.set( m,
+				Math.cos(theta),	Math.sin(theta),	0,	0,
+				-Math.sin(theta),	Math.cos(theta),	0,	0,
 				0,	0,	1,	0,
 				0,	0,	0,	1
 			);
+			transform = Mat4.multiply(transform, transform, m);
 		}
-
-		transform = Mat4.multiply(transform, ms, mrx);
-		transform = Mat4.multiply(transform, transform, mry);
-		transform = Mat4.multiply(transform, transform, mrz);
-		transform = Mat4.multiply(transform, transform, mt);
 
 		console.log("Transform matrix: " + transform.map(x => x.toFixed(2)));
 
@@ -321,13 +317,16 @@ Scene.prototype.computeTransformation = function(transformSequence) {
 }
 /*
 mt:
-1,0,0,0,
-0,1,0,1.5,
-0,0,1,0,
+1,0,0,-1,
+0,1,0,0,
+0,0,1,2,
 0,0,0,1
 
 final (only mt):
-
+1,0,0,-1,
+0,1,0,0,
+0,0,1,2,
+0,0,0,1
 */
 
 
