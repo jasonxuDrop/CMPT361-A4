@@ -146,8 +146,8 @@ TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
 	var sectorAngle, stackAngle;
 
 	// add (sectorCount+1) vertices per stack
-		// the first and last vertices have same position and normal, but different tex coords
-		for(var i = 0; i <= numStacks; ++i) {
+	// the first and last vertices have same position and normal, but different tex coords
+	for(var i = 0; i <= numStacks; ++i) {
 		stackAngle = Math.PI / 2 - i * stackStep;	// starting from pi/2 to -pi/2
 		xy = Math.cos(stackAngle);				// r * cos(u)
 		z = Math.sin(stackAngle);				// r * sin(u)
@@ -162,7 +162,7 @@ TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
 			verts.push(x);
 			verts.push(y);
 			verts.push(z);
-	
+
 			// normalized vertex normal (nx, ny, nz)
 			nx = x;
 			ny = y;
@@ -170,7 +170,7 @@ TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
 			norms.push(nx);
 			norms.push(ny);
 			norms.push(nz);
-	
+
 			// vertex tex coord (s, t) range between [0, 1]
 			s = j / numSectors;
 			t = i / numStacks;
