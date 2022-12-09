@@ -125,7 +125,7 @@ const cube = {
 TriangleMesh.prototype.createCube = function() {
 	this.positions = cube.positions;
 	this.normals = cube.normals;
-	this.uvCoords = cube.uvCoords; // TODO: check if correct with image
+	this.uvCoords = cube.uvs; // TODO: check if correct with image
 }
 
 TriangleMesh.prototype.createSphere = function(numStacks, numSectors) {
