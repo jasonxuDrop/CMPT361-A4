@@ -387,16 +387,16 @@ void main() {
   
 	vec3 diffuse = kd * lightIntensity * max(0.0, n_dot_l);
 	vec3 specular = ks * lightIntensity * pow(max(0.0, n_dot_hv), shininess);
-	vec3 finalColor = ka + diffuse + specular;
+	vec4 finalColor = vec4(ka + diffuse + specular, 1);
 	
 
 	// ! texture sampling
 
 	if (hasTexture) {
-
+		finalColor *= texture2D(uTexture, vTexCoord);
 	}
   
-	gl_FragColor = vec4(finalColor, 1.0);
+	gl_FragColor = finalColor;
 }
 `;
 
