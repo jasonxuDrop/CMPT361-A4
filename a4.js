@@ -346,7 +346,6 @@ varying vec2 vTexCoord;
 
 // new vars
 varying vec3 fNormal;
-varying vec3 fPosition;
 varying vec3 lightDir;
 varying vec3 cameraDir;
 
@@ -364,7 +363,7 @@ void main() {
 Renderer.prototype.FRAGMENT_SHADER = `
 precision mediump float;
 // created with material: 
-// ambient ( ka ), diffuse ( kd ), specular ( ks ), and specular exponent ( shininess ) coefficients
+// ambient (ka), diffuse (kd), specular (ks), and specular exponent (shininess) coefficients
 uniform vec3 ka, kd, ks, lightIntensity; 
 uniform float shininess;
 uniform sampler2D uTexture;
@@ -386,8 +385,8 @@ void main() {
 	vec3 halfVector = normalize(lightDir + cameraDir);
 	float n_dot_hv = dot(fNormal, halfVector);
   
-	vec3 diffuse = kd * max(0.0, n_dot_l);
-	vec3 specular = ks * pow(max(0.0, n_dot_hv), shininess);
+	vec3 diffuse = kd * lightIntensity * max(0.0, n_dot_l);
+	vec3 specular = ks * lightIntensity * pow(max(0.0, n_dot_hv), shininess);
 	vec3 finalColor = ka + diffuse + specular;
 	
 
